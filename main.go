@@ -1,20 +1,31 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/line/line-bot-sdk-go/linebot"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+var db *mongo.Client
 
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
+
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	db, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
+	defer db.Disconnect(context.Background())
 
 	bot, err := linebot.New(os.Getenv("LINE_CHANNEL_SECRET"), os.Getenv("LINE_ACCESS_TOKEN"))
 	if err != nil {
