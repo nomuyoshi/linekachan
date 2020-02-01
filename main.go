@@ -4,14 +4,27 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
+	"github.com/line/line-bot-sdk-go/linebot"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	bot, err := linebot.New(os.Getenv("LINE_CHANNEL_SECRET"), os.Getenv("LINE_ACCESS_TOKEN"))
+	if err != nil {
+		log.Fatal("Error linebot new:", err)
+	}
+
+	callbackHandler := &CallbackHandler{bot: bot}
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/home", homeHandler).Methods("GET")
-	router.HandleFunc("/callback", callbackHandler).Methods("POST")
+	router.Handle("/callback", callbackHandler).Methods("POST")
 	http.Handle("/", router)
 
 	log.Print("Web Server starting port: 3000")
@@ -24,8 +37,4 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"url": "/home"})
-}
-
-func callbackHandler(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(map[string]string{"url": "/callback"})
 }
