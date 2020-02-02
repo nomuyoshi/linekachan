@@ -15,6 +15,8 @@ const usage = `「リマインド　内容」と話しかけてください。
 例) リマインド　食パンを買って帰る`
 const datetimeSelectText = "リマインドして欲しい日時を指定してください。"
 const datetimePickerLabel = "日時指定"
+const lineLayout = "2006-01-02T15:04"
+const lineMessageLayout = "2006/01/02 15:04"
 
 // CallbackHandler はLINEからのcallbackを処理する構造体
 type CallbackHandler struct {
@@ -30,11 +32,11 @@ func (h *CallbackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, event := range events {
-		if event.Type == linebot.EventTypeMessage {
-			var messages []linebot.SendingMessage
+		var messages []linebot.SendingMessage
 
-			switch receivedMessage := event.Message.(type) {
-			case *linebot.TextMessage:
+		switch event.Type {
+		case linebot.EventTypeMessage:
+			if receivedMessage, ok := event.Message.(*linebot.TextMessage); ok {
 				receivedText := strings.TrimSpace(receivedMessage.Text)
 
 				if strings.HasPrefix(receivedText, prefix) {
@@ -48,13 +50,26 @@ func (h *CallbackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				} else {
 					messages = append(messages, linebot.NewTextMessage(usage))
 				}
-			default:
+			} else {
 				messages = append(messages, linebot.NewTextMessage(usage))
 			}
-
-			if _, err := h.bot.ReplyMessage(event.ReplyToken, messages...).Do(); err != nil {
-				log.Print("Error reply: ", err)
+		case linebot.EventTypePostback:
+			if !strings.HasPrefix(event.Postback.Data, "scheduleId=") {
+				continue
 			}
+			scheduleID := strings.TrimPrefix(event.Postback.Data, "scheduleId=")
+
+			if schedule, _ := findScheduleBy(scheduleID, event.Source.UserID); schedule != nil {
+				datetime, _ := time.Parse(lineLayout, event.Postback.Params.Datetime)
+				schedule.update(datetime)
+				messages = append(messages, linebot.NewTextMessage(datetime.Format(lineMessageLayout)+"で受け付けました！"))
+			} else {
+				messages = append(messages, linebot.NewTextMessage("予期せぬエラーが発生しました。"))
+			}
+		}
+
+		if _, err := h.bot.ReplyMessage(event.ReplyToken, messages...).Do(); err != nil {
+			log.Print("Error reply: ", err)
 		}
 	}
 	w.WriteHeader(http.StatusOK)
@@ -63,14 +78,13 @@ func (h *CallbackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func buildDatetimePickerMessage(postback string) *linebot.TemplateMessage {
 	now := time.Now()
 	max := now.AddDate(1, 0, 0)
-	layout := "2006-01-02T15:04"
 	datetimePickerAction := linebot.NewDatetimePickerAction(
 		datetimePickerLabel,
 		postback,
 		"datetime",
-		now.Format(layout),
-		max.Format(layout),
-		now.Format(layout),
+		now.Format(lineLayout),
+		max.Format(lineLayout),
+		now.Format(lineLayout),
 	)
 	datetimeTemplate := linebot.NewButtonsTemplate("", "", datetimeSelectText, datetimePickerAction)
 
