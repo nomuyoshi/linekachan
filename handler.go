@@ -37,8 +37,12 @@ func (h *CallbackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				receivedText := strings.TrimSpace(receivedMessage.Text)
 
 				if strings.HasPrefix(receivedText, PREFIX) {
-					content := strings.TrimSpace(strings.Replace(receivedText, PREFIX, "", 1))
-					messages = append(messages, linebot.NewTextMessage("受け付けました！！\n"+content))
+					content := strings.Replace(receivedText, PREFIX, "", 1)
+					schedule := newScedule(event.Source.UserID, content)
+					if err := schedule.create(); err != nil {
+						break
+					}
+					messages = append(messages, linebot.NewTextMessage("受け付けました！！"))
 				} else {
 					messages = append(messages, linebot.NewTextMessage(USAGE))
 				}

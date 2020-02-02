@@ -10,6 +10,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/joho/godotenv v1.3.0
 	github.com/line/line-bot-sdk-go v7.0.0+incompatible
+	github.com/mongodb/mongo-go-driver v1.2.1
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/tidwall/pretty v1.0.0 // indirect
