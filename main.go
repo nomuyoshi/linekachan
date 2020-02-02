@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -35,7 +34,6 @@ func main() {
 
 	callbackHandler := &CallbackHandler{bot: bot}
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/home", homeHandler).Methods("GET")
 	router.Handle("/callback", callbackHandler).Methods("POST")
 	http.Handle("/", router)
 
@@ -43,10 +41,4 @@ func main() {
 	if err := http.ListenAndServe(":3000", nil); err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
-}
-
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"url": "/home"})
 }
