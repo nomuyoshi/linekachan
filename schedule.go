@@ -14,7 +14,7 @@ type Schedule struct {
 	Content string             `bson:"content"`
 }
 
-func newScedule(userID string, content string) *Schedule {
+func newSchedule(userID string, content string) *Schedule {
 	return &Schedule{
 		UserID:  userID,
 		Content: strings.TrimSpace(content),
@@ -30,4 +30,8 @@ func (s *Schedule) create() error {
 
 	s.ID = res.InsertedID.(primitive.ObjectID)
 	return nil
+}
+
+func (s *Schedule) postbackData() string {
+	return "scheduleId=" + s.ID.String()
 }
