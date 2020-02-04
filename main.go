@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/bamzi/jobrunner"
 	"github.com/gorilla/mux"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/line/line-bot-sdk-go/linebot"
@@ -32,6 +33,9 @@ func main() {
 	if err != nil {
 		log.Fatal("Error linebot new:", err)
 	}
+
+	jobrunner.Start()
+	jobrunner.Schedule("@every 5m", Reminder{})
 
 	callbackHandler := &CallbackHandler{bot: bot}
 	router := mux.NewRouter().StrictSlash(true)
