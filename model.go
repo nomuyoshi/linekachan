@@ -48,11 +48,11 @@ func (lkDb *LineKachanDb) UpdateSchedule(schedule *Schedule) (int64, error) {
 
 // Schedule はリマインドスケジュールを管理する
 type Schedule struct {
-	ID      int64     `db:"id, primarykey, autoincrement"`
-	UserID  string    `db:"user_id, notnull"`
-	Content string    `db:"content, notnull"`
-	Remind  time.Time `db:"remind"`
-	Created time.Time `db:"created_at, notnull"`
+	ID      int64         `db:"id, primarykey, autoincrement"`
+	UserID  string        `db:"user_id, notnull"`
+	Content string        `db:"content, notnull"`
+	Remind  gorp.NullTime `db:"remind"`
+	Created time.Time     `db:"created_at, notnull"`
 }
 
 // PreInsert はDBへのInsert前のフック
