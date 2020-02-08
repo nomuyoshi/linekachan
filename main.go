@@ -1,7 +1,7 @@
 package main
 
 import (
-	"context"
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -12,11 +12,9 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/line/line-bot-sdk-go/linebot"
 
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	_ "github.com/lib/pq"
+	"gopkg.in/gorp.v2"
 )
-
-var db *mongo.Database
 
 func init() {
 	jst, _ := time.LoadLocation("Asia/Tokyo")
@@ -24,10 +22,13 @@ func init() {
 }
 
 func main() {
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGODB_URI")))
-	defer mongoClient.Disconnect(context.Background())
-	db = mongoClient.Database("linekachan")
+	db, _ := sql.Open("postgres", os.Getenv("POSTGRESQL_DSN"))
+	dbmap := &gorp.DbMap{Db: db, Dialect: gorp.PostgresDialect{}}
+	lkDb := NewLineKachanDb(dbmap)
+
+	if err := lkDb.CreateTables(); err != nil {
+		log.Fatal("Error create table:", err)
+	}
 
 	bot, err := linebot.New(os.Getenv("LINE_CHANNEL_SECRET"), os.Getenv("LINE_ACCESS_TOKEN"))
 	if err != nil {
@@ -37,7 +38,7 @@ func main() {
 	jobrunner.Start()
 	jobrunner.Schedule("@every 5m", Reminder{})
 
-	callbackHandler := &CallbackHandler{bot: bot}
+	callbackHandler := &CallbackHandler{bot: bot, lkDb: lkDb}
 	router := mux.NewRouter().StrictSlash(true)
 	router.Handle("/callback", callbackHandler).Methods("POST")
 	http.Handle("/", router)

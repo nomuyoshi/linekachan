@@ -3,22 +3,16 @@ module github.com/nomuyoshi/linekachan
 go 1.13
 
 require (
-	github.com/DataDog/zstd v1.4.4 // indirect
-	github.com/bamzi/jobrunner v1.0.0 // indirect
-	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/golang/snappy v0.0.1 // indirect
-	github.com/google/go-cmp v0.4.0 // indirect
+	github.com/bamzi/jobrunner v1.0.0
+	github.com/go-gorp/gorp v2.2.0+incompatible // indirect
+	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/gorilla/mux v1.7.3
 	github.com/joho/godotenv v1.3.0
+	github.com/lib/pq v1.3.0
 	github.com/line/line-bot-sdk-go v7.0.0+incompatible
-	github.com/mongodb/mongo-go-driver v1.2.1
-	github.com/pkg/errors v0.9.1 // indirect
+	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
+	github.com/poy/onpar v0.0.0-20190519213022-ee068f8ea4d1 // indirect
 	github.com/stretchr/testify v1.4.0 // indirect
-	github.com/tidwall/pretty v1.0.0 // indirect
-	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
-	github.com/xdg/stringprep v1.0.0 // indirect
-	go.mongodb.org/mongo-driver v1.2.1
-	golang.org/x/crypto v0.0.0-20200128174031-69ecbb4d6d5d // indirect
-	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
-	golang.org/x/text v0.3.2 // indirect
+	github.com/ziutek/mymysql v1.5.4 // indirect
+	gopkg.in/gorp.v2 v2.2.0
 )

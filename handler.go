@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,14 +14,15 @@ import (
 const prefix = "リマインド"
 const usage = `「リマインド　内容」と話しかけてください。
 例) リマインド　食パンを買って帰る`
-const datetimeSelectText = "リマインドして欲しい日時を指定してください。"
+const datetimeSelectText = "いつ言えばいい"
 const datetimePickerLabel = "日時指定"
 const lineLayout = "2006-01-02T15:04"
 const lineMessageLayout = "2006/01/02 15:04"
 
 // CallbackHandler はLINEからのcallbackを処理する構造体
 type CallbackHandler struct {
-	bot *linebot.Client
+	bot  *linebot.Client
+	lkDb *LineKachanDb
 }
 
 func (h *CallbackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -41,8 +43,8 @@ func (h *CallbackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 				if strings.HasPrefix(receivedText, prefix) {
 					content := strings.Replace(receivedText, prefix, "", 1)
-					schedule := newSchedule(event.Source.UserID, content)
-					if err := schedule.create(); err != nil {
+					schedule := NewSchedule(event.Source.UserID, content)
+					if err := h.lkDb.AddSchedule(schedule); err != nil {
 						break
 					}
 
@@ -57,13 +59,15 @@ func (h *CallbackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if !strings.HasPrefix(event.Postback.Data, "scheduleId=") {
 				continue
 			}
-			scheduleID := strings.TrimPrefix(event.Postback.Data, "scheduleId=")
-
-			if schedule, _ := findScheduleBy(scheduleID, event.Source.UserID); schedule != nil {
-				datetime, _ := time.Parse(lineLayout, event.Postback.Params.Datetime)
-				schedule.update(datetime)
+			scheduleID, _ := strconv.ParseInt(strings.TrimPrefix(event.Postback.Data, "scheduleId="), 10, 64)
+			schedule, err := h.lkDb.FindScheduleBy(scheduleID, event.Source.UserID)
+			if err == nil {
+				datetime, _ := time.ParseInLocation(lineLayout, event.Postback.Params.Datetime, time.Local)
+				schedule.Remind = datetime
+				h.lkDb.UpdateSchedule(schedule)
 				messages = append(messages, linebot.NewTextMessage(datetime.Format(lineMessageLayout)+"で受け付けました！"))
 			} else {
+				log.Print(err)
 				messages = append(messages, linebot.NewTextMessage("予期せぬエラーが発生しました。"))
 			}
 		}
@@ -88,5 +92,5 @@ func buildDatetimePickerMessage(postback string) *linebot.TemplateMessage {
 	)
 	datetimeTemplate := linebot.NewButtonsTemplate("", "", datetimeSelectText, datetimePickerAction)
 
-	return linebot.NewTemplateMessage("Lineをアップデートしてください", datetimeTemplate)
+	return linebot.NewTemplateMessage(datetimePickerLabel, datetimeTemplate)
 }
