@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -25,14 +24,15 @@ func (lkDb *LineKachanDb) CreateTables() error {
 	return lkDb.dbmap.CreateTablesIfNotExists()
 }
 
-// FindScheduleBy はScheduleをid, user_idをもとに取得する
-func (lkDb *LineKachanDb) FindScheduleBy(id int64, userID string) (*Schedule, error) {
-	var schedule Schedule
-	err := lkDb.dbmap.SelectOne(&schedule, "select * from schedules where id=$1 and user_id=$2", id, userID)
-	if err != nil {
-		return &schedule, err
-	}
-	return &schedule, nil
+// SelectOneScheduleBy はScheduleをid, user_idをもとに取得する
+func (lkDb *LineKachanDb) SelectOneScheduleBy(schedule *Schedule, id int64, userID string) error {
+	return lkDb.dbmap.SelectOne(schedule, "select * from schedules where id=$1 and user_id=$2", id, userID)
+}
+
+// SelectSchedulesBy は引数のStatusとremindでScheduleを絞り込んだ一覧を取得する
+func (lkDb *LineKachanDb) SelectSchedulesBy(schedules *[]Schedule, status ScheduleStatus, remind time.Time) error {
+	_, err := lkDb.dbmap.Select(&schedules, "select * from schedules where status=$1 and remind < $2", Scheduled, remind)
+	return err
 }
 
 // AddSchedule はデータベースにScheduleを追加する
@@ -42,17 +42,25 @@ func (lkDb *LineKachanDb) AddSchedule(schedule *Schedule) error {
 
 // UpdateSchedule はデータベースのScheduleを更新する
 func (lkDb *LineKachanDb) UpdateSchedule(schedule *Schedule) (int64, error) {
-	log.Print(schedule)
 	return lkDb.dbmap.Update(schedule)
 }
 
+// ScheduleStatus はリマインド済みかどうかのステータス
+type ScheduleStatus int
+
+const (
+	Scheduled ScheduleStatus = iota
+	Reminded
+)
+
 // Schedule はリマインドスケジュールを管理する
 type Schedule struct {
-	ID      int64         `db:"id, primarykey, autoincrement"`
-	UserID  string        `db:"user_id, notnull"`
-	Content string        `db:"content, notnull"`
-	Remind  gorp.NullTime `db:"remind"`
-	Created time.Time     `db:"created_at, notnull"`
+	ID      int64          `db:"id, primarykey, autoincrement"`
+	UserID  string         `db:"user_id, notnull"`
+	Content string         `db:"content, notnull"`
+	Status  ScheduleStatus `db:"status, notnull"`
+	Remind  gorp.NullTime  `db:"remind"`
+	Created time.Time      `db:"created_at, notnull"`
 }
 
 // PreInsert はDBへのInsert前のフック
@@ -66,9 +74,11 @@ func NewSchedule(userID string, content string) *Schedule {
 	return &Schedule{
 		UserID:  userID,
 		Content: strings.TrimSpace(content),
+		Status:  Scheduled,
 	}
 }
 
-func (s *Schedule) postbackData() string {
+// PostbackData はLineメッセージに含めるpostback
+func (s *Schedule) PostbackData() string {
 	return "scheduleId=" + strconv.FormatInt(s.ID, 10)
 }

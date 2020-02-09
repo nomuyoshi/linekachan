@@ -36,7 +36,7 @@ func main() {
 	}
 
 	jobrunner.Start()
-	jobrunner.Schedule("@every 5m", Reminder{})
+	jobrunner.Schedule("@every 1m", Reminder{bot: bot, lkDb: lkDb})
 
 	callbackHandler := &CallbackHandler{bot: bot, lkDb: lkDb}
 	router := mux.NewRouter().StrictSlash(true)
