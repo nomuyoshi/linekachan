@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/line/line-bot-sdk-go/linebot"
+	"gopkg.in/gorp.v2"
 )
 
 // リマインド登録に必要なキーワード
@@ -59,7 +60,7 @@ func (h *CallbackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			var schedule Schedule
 			if err := h.lkDb.SelectOneScheduleBy(&schedule, scheduleID, event.Source.UserID); err == nil {
 				datetime, _ := time.ParseInLocation(lineLayout, event.Postback.Params.Datetime, time.Local)
-				schedule.Remind.Time = datetime
+				schedule.Remind = gorp.NullTime{Time: datetime, Valid: true}
 				h.lkDb.UpdateSchedule(&schedule)
 				messages = append(messages, linebot.NewTextMessage(datetime.Format(strLayout)+"\n"+OkText))
 			} else {

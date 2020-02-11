@@ -26,7 +26,10 @@ func (r Reminder) Run() {
 	var errorIds []int64
 	for _, sch := range schedules {
 		msg := linebot.NewTextMessage(RemindText + "\n" + sch.Content)
-		if _, err := r.bot.PushMessage(sch.UserID, msg).Do(); err != nil {
+		if _, err := r.bot.PushMessage(sch.UserID, msg).Do(); err == nil {
+			sch.Status = Reminded
+			r.lkDb.UpdateSchedule(&sch)
+		} else {
 			errorIds = append(errorIds, sch.ID)
 		}
 	}

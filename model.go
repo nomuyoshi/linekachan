@@ -31,7 +31,7 @@ func (lkDb *LineKachanDb) SelectOneScheduleBy(schedule *Schedule, id int64, user
 
 // SelectSchedulesBy は引数のStatusとremindでScheduleを絞り込んだ一覧を取得する
 func (lkDb *LineKachanDb) SelectSchedulesBy(schedules *[]Schedule, status ScheduleStatus, remind time.Time) error {
-	_, err := lkDb.dbmap.Select(&schedules, "select * from schedules where status=$1 and remind < $2", Scheduled, remind)
+	_, err := lkDb.dbmap.Select(schedules, "select * from schedules where status=$1 and remind <= $2", Scheduled, remind)
 	return err
 }
 
