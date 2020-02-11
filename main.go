@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -22,6 +23,9 @@ func init() {
 }
 
 func main() {
+	port := flag.String("port", "3000", "port number")
+	flag.Parse()
+
 	db, _ := sql.Open("postgres", os.Getenv("POSTGRESQL_DSN"))
 	dbmap := &gorp.DbMap{Db: db, Dialect: gorp.PostgresDialect{}}
 	lkDb := NewLineKachanDb(dbmap)
@@ -43,8 +47,8 @@ func main() {
 	router.Handle("/callback", callbackHandler).Methods("POST")
 	http.Handle("/", router)
 
-	log.Print("Web Server starting port: 3000")
-	if err := http.ListenAndServe(":3000", nil); err != nil {
+	log.Print("Web Server starting port: ", *port)
+	if err := http.ListenAndServe(":"+*port, nil); err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
