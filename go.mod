@@ -1,6 +1,6 @@
 module github.com/nomuyoshi/linekachan
 
-go 1.13
+go 1.13.5
 
 require (
 	github.com/bamzi/jobrunner v1.0.0
